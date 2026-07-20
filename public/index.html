@@ -70,18 +70,42 @@
   .mini { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 5px; padding: 5px 10px; font-size: 12px; }
   .danger { background: transparent; color: #F09595; border: 1px solid #7A2438; border-radius: 5px; padding: 5px 10px; font-size: 12px; }
   .mfoot { display: flex; align-items: center; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
+  #lockScreen { position: fixed; inset: 0; background: var(--ink); display: flex; align-items: center; justify-content: center; z-index: 50; }
+  .lockbox { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--red); border-radius: 10px; padding: 32px 36px; width: 340px; max-width: 90vw; text-align: center; }
+  .lockbox .brand { margin-bottom: 4px; }
+  .lockbox h2 { font-family: var(--disp); font-weight: 700; font-size: 28px; text-transform: uppercase; margin-bottom: 18px; }
+  #pinInput { width: 100%; text-align: center; font-size: 22px; letter-spacing: .3em; padding: 12px; margin-bottom: 12px; }
+  #pinBtn { width: 100%; background: var(--red); color: #fff; border: none; border-radius: 8px; padding: 13px; font-family: var(--disp); font-weight: 700; font-size: 20px; text-transform: uppercase; letter-spacing: .05em; }
+  #pinErr { color: #F09595; font-size: 13px; margin-top: 10px; min-height: 18px; }
+  .lockhint { color: var(--mute); font-size: 12px; margin-top: 14px; }
+  body.viewonly .advrow, body.viewonly #dispatchBtn, body.viewonly .subactions,
+  body.viewonly #manageToggle, body.viewonly #managePanel { display: none !important; }
+  .rolebadge { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; }
 </style>
 </head>
 <body>
+<div id="lockScreen">
+  <div class="lockbox">
+    <div class="brand">Parkway Family Kia</div>
+    <h2>Waiter dispatch</h2>
+    <input type="password" id="pinInput" placeholder="PIN" inputmode="numeric" autocomplete="off">
+    <button id="pinBtn">Unlock</button>
+    <div id="pinErr"></div>
+    <div class="lockhint">Advisor PIN unlocks dispatch controls.<br>Tech PIN opens the live board, view-only.</div>
+  </div>
+</div>
+
 <header>
   <div>
     <div class="brand">Parkway Family Kia</div>
     <h1>Waiter dispatch</h1>
   </div>
   <div class="hright">
+    <span class="rolebadge" id="roleBadge" style="display:none"></span>
     <div class="dot" id="dot"></div>
     <span class="livetext" id="liveText">Connecting…</span>
     <button class="ghost" id="manageToggle">Manage techs</button>
+    <button class="ghost" id="lockBtn" style="display:none">Lock</button>
   </div>
 </header>
 
@@ -136,8 +160,59 @@ const API = "/api/board";
 let state = { techs: [], log: [] };
 let busy = false;
 let flashTimer = null;
+let auth = { pin: null, role: null };
+try {
+  const saved = JSON.parse(localStorage.getItem("dispatch-auth") || "null");
+  if (saved && saved.pin && saved.role) auth = saved;
+} catch (e) {}
 
 const $ = (id) => document.getElementById(id);
+
+function applyRole() {
+  const locked = !auth.role;
+  $("lockScreen").style.display = locked ? "flex" : "none";
+  $("lockBtn").style.display = locked ? "none" : "";
+  const badge = $("roleBadge");
+  badge.style.display = locked ? "none" : "";
+  badge.textContent = auth.role === "advisor" ? "Advisor" : "View only";
+  document.body.classList.toggle("viewonly", auth.role === "view");
+  if (!locked) poll();
+}
+
+function lockOut(msg) {
+  auth = { pin: null, role: null };
+  localStorage.removeItem("dispatch-auth");
+  applyRole();
+  if (msg) { $("pinErr").textContent = msg; }
+}
+
+async function login() {
+  const pin = $("pinInput").value.trim();
+  if (!pin) return;
+  $("pinErr").textContent = "";
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "login", payload: { pin } })
+    });
+    const data = await res.json();
+    if (data.role) {
+      auth = { pin, role: data.role };
+      localStorage.setItem("dispatch-auth", JSON.stringify(auth));
+      $("pinInput").value = "";
+      applyRole();
+    } else {
+      $("pinErr").textContent = data.error || "Wrong PIN";
+    }
+  } catch (e) {
+    $("pinErr").textContent = "Connection failed — try again";
+  }
+}
+
+$("pinBtn").onclick = login;
+$("pinInput").addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
+$("lockBtn").onclick = () => lockOut("");
 
 function timeStr(iso) {
   return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
@@ -219,8 +294,10 @@ function render() {
 }
 
 async function poll() {
+  if (!auth.pin) return;
   try {
-    const res = await fetch(API, { cache: "no-store" });
+    const res = await fetch(API, { cache: "no-store", headers: { "x-pin": auth.pin } });
+    if (res.status === 401) { lockOut("Session ended — enter your PIN"); return; }
     const data = await res.json();
     if (data.state) {
       state = data.state;
@@ -235,16 +312,21 @@ async function poll() {
 }
 
 async function act(action, payload) {
-  if (busy) return;
+  if (busy || auth.role !== "advisor") return;
   busy = true;
   render();
   try {
     const res = await fetch(API, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-pin": auth.pin },
       body: JSON.stringify({ action, payload })
     });
     const data = await res.json();
+    if (res.status === 401) {
+      busy = false;
+      lockOut(data.error || "Session ended — enter your PIN");
+      return;
+    }
     if (data.state) { state = data.state; }
     if (data.error) flash("err", data.error);
     else if (data.message) flash("ok", data.message);
@@ -285,7 +367,7 @@ $("manageList").addEventListener("click", (e) => {
   }
 });
 
-poll();
+applyRole();
 setInterval(poll, 3000);
 </script>
 </body>

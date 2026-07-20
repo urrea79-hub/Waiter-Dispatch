@@ -98,9 +98,23 @@ export default async (req) => {
   const store = getStore("dispatch");
   const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 
+  const ADVISOR_PIN = process.env.ADVISOR_PIN || "2468";
+  const VIEW_PIN = process.env.VIEW_PIN || "1357";
+
+  const roleFor = (pin) => {
+    if (!pin) return null;
+    if (pin === ADVISOR_PIN) return "advisor";
+    if (pin === VIEW_PIN) return "view";
+    return null;
+  };
+
   if (req.method === "GET") {
+    const role = roleFor(req.headers.get("x-pin"));
+    if (!role) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers });
+    }
     const state = await loadState(store);
-    return new Response(JSON.stringify({ state }), { headers });
+    return new Response(JSON.stringify({ state, role }), { headers });
   }
 
   if (req.method === "POST") {
@@ -109,6 +123,22 @@ export default async (req) => {
       body = await req.json();
     } catch {
       return new Response(JSON.stringify({ error: "Bad request" }), { status: 400, headers });
+    }
+
+    if (body.action === "login") {
+      const role = roleFor((body.payload && body.payload.pin) || "");
+      if (!role) {
+        return new Response(JSON.stringify({ error: "Wrong PIN" }), { status: 401, headers });
+      }
+      return new Response(JSON.stringify({ role }), { headers });
+    }
+
+    const role = roleFor(req.headers.get("x-pin"));
+    if (role !== "advisor") {
+      return new Response(
+        JSON.stringify({ error: role === "view" ? "View-only access — advisor PIN required for that" : "unauthorized" }),
+        { status: 401, headers }
+      );
     }
 
     let result = null;
