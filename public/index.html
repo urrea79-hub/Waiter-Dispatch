@@ -78,8 +78,15 @@
   #pinBtn { width: 100%; background: var(--red); color: #fff; border: none; border-radius: 8px; padding: 13px; font-family: var(--disp); font-weight: 700; font-size: 20px; text-transform: uppercase; letter-spacing: .05em; }
   #pinErr { color: #F09595; font-size: 13px; margin-top: 10px; min-height: 18px; }
   .lockhint { color: var(--mute); font-size: 12px; margin-top: 14px; }
-  body.viewonly .advrow, body.viewonly #dispatchBtn, body.viewonly .subactions,
-  body.viewonly #manageToggle, body.viewonly #managePanel { display: none !important; }
+  body.role-view .advrow, body.role-view #dispatchBtn, body.role-view .subactions,
+  body.role-view #manageToggle, body.role-view #managePanel, body.role-view #directCard { display: none !important; }
+  body.role-advisor #manageToggle, body.role-advisor #managePanel,
+  body.role-advisor #directCard { display: none !important; }
+  #directCard { margin-top: 16px; }
+  .directbtns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .directbtn { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-left: 3px solid var(--red); border-radius: 6px; padding: 10px 16px; font-family: var(--disp); font-weight: 600; font-size: 18px; text-transform: uppercase; letter-spacing: .03em; }
+  .directbtn:disabled { border-left-color: var(--line); }
+  .directtag { background: var(--red); color: #fff; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; border-radius: 3px; padding: 2px 6px; }
   .rolebadge { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; }
 </style>
 </head>
@@ -91,7 +98,7 @@
     <input type="password" id="pinInput" placeholder="PIN" inputmode="numeric" autocomplete="off">
     <button id="pinBtn">Unlock</button>
     <div id="pinErr"></div>
-    <div class="lockhint">Advisor PIN unlocks dispatch controls.<br>Tech PIN opens the live board, view-only.</div>
+    <div class="lockhint">Manager PIN — full control · Advisor PIN — dispatch<br>Tech PIN — live board, view-only</div>
   </div>
 </div>
 
@@ -130,6 +137,11 @@
       <div class="label">On deck</div>
       <div id="deck"><div class="muted">Loading…</div></div>
       <div class="outnote" id="outNote"></div>
+    </div>
+    <div class="card" id="directCard">
+      <div class="label">Direct dispatch — manager</div>
+      <div class="muted" style="margin-top:6px">Send a waiter to a specific tech. They drop to the back of the rotation and it's logged as direct.</div>
+      <div class="directbtns" id="directBtns"></div>
     </div>
   </section>
 
@@ -174,8 +186,9 @@ function applyRole() {
   $("lockBtn").style.display = locked ? "none" : "";
   const badge = $("roleBadge");
   badge.style.display = locked ? "none" : "";
-  badge.textContent = auth.role === "advisor" ? "Advisor" : "View only";
-  document.body.classList.toggle("viewonly", auth.role === "view");
+  badge.textContent = auth.role === "manager" ? "Manager" : auth.role === "advisor" ? "Advisor" : "View only";
+  document.body.classList.remove("role-manager", "role-advisor", "role-view");
+  if (auth.role) document.body.classList.add("role-" + auth.role);
   if (!locked) poll();
 }
 
@@ -280,7 +293,15 @@ function render() {
     : [...todays].reverse().slice(0, 30).map(e =>
         '<div class="logrow"><span class="logtime">' + timeStr(e.time) + '</span>' +
         '<span class="logtech">' + esc(e.techName) + '</span>' +
+        (e.direct ? '<span class="directtag">Direct</span>' : "") +
         (e.advisor ? '<span class="logadv">by ' + esc(e.advisor) + '</span>' : "") + '</div>'
+      ).join("");
+
+  $("directBtns").innerHTML = state.techs.length === 0
+    ? '<div class="muted">Add techs first</div>'
+    : state.techs.map(t =>
+        '<button class="directbtn" data-direct="' + t.id + '"' + (t.out ? " disabled" : "") + '>' +
+        esc(t.name) + (t.out ? " — out" : "") + '</button>'
       ).join("");
 
   $("manageList").innerHTML = state.techs.map((t, i) =>
@@ -312,7 +333,7 @@ async function poll() {
 }
 
 async function act(action, payload) {
-  if (busy || auth.role !== "advisor") return;
+  if (busy || !auth.role || auth.role === "view") return;
   busy = true;
   render();
   try {
@@ -353,6 +374,15 @@ $("manageToggle").onclick = () => {
   p.classList.toggle("open");
   $("manageToggle").textContent = p.classList.contains("open") ? "Close manage" : "Manage techs";
 };
+$("directBtns").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-direct]");
+  if (!btn || btn.disabled) return;
+  const t = state.techs.find(x => x.id === btn.dataset.direct);
+  if (t && confirm("Dispatch a waiter directly to " + t.name + "? They'll move to the back of the rotation.")) {
+    act("dispatchTo", { id: t.id, advisor: $("advisor").value });
+  }
+});
+
 $("manageList").addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-act]");
   if (!btn || btn.disabled) return;

@@ -39,6 +39,25 @@ function apply(state, action, payload = {}) {
       ].slice(-300);
       return { state: s, message: `Waiter dispatched to ${tech.name}`, dispatched: tech.name };
     }
+    case "dispatchTo": {
+      const tech = s.techs.find((t) => t.id === payload.id);
+      if (!tech) return { state: s, error: "Tech not found" };
+      if (tech.out) return { state: s, error: `${tech.name} is marked out — mark them in first` };
+      const prevOrder = s.techs.map((t) => t.id);
+      s.techs = [...s.techs.filter((t) => t.id !== tech.id), tech];
+      s.log = [
+        ...s.log,
+        {
+          techId: tech.id,
+          techName: tech.name,
+          time: new Date().toISOString(),
+          advisor: (payload.advisor || "").trim().slice(0, 20) || "Manager",
+          direct: true,
+          prevOrder,
+        },
+      ].slice(-300);
+      return { state: s, message: `Waiter dispatched directly to ${tech.name} — moved to back of line`, dispatched: tech.name };
+    }
     case "skip": {
       const active = s.techs.filter((t) => !t.out);
       if (active.length === 0) return { state: s, error: "No techs available" };
@@ -98,14 +117,28 @@ export default async (req) => {
   const store = getStore("dispatch");
   const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 
+  const MANAGER_PIN = process.env.MANAGER_PIN || "8642";
   const ADVISOR_PIN = process.env.ADVISOR_PIN || "2468";
   const VIEW_PIN = process.env.VIEW_PIN || "1357";
 
   const roleFor = (pin) => {
     if (!pin) return null;
+    if (pin === MANAGER_PIN) return "manager";
     if (pin === ADVISOR_PIN) return "advisor";
     if (pin === VIEW_PIN) return "view";
     return null;
+  };
+
+  const PERMS = {
+    dispatch: ["advisor", "manager"],
+    skip: ["advisor", "manager"],
+    undo: ["advisor", "manager"],
+    dispatchTo: ["manager"],
+    addTech: ["manager"],
+    removeTech: ["manager"],
+    toggleOut: ["manager"],
+    move: ["manager"],
+    clearLog: ["manager"],
   };
 
   if (req.method === "GET") {
@@ -134,11 +167,12 @@ export default async (req) => {
     }
 
     const role = roleFor(req.headers.get("x-pin"));
-    if (role !== "advisor") {
-      return new Response(
-        JSON.stringify({ error: role === "view" ? "View-only access — advisor PIN required for that" : "unauthorized" }),
-        { status: 401, headers }
-      );
+    const allowed = PERMS[body.action] || [];
+    if (!role || !allowed.includes(role)) {
+      let msg = "unauthorized";
+      if (role === "view") msg = "View-only access — no dispatch permissions";
+      else if (role === "advisor") msg = "Manager PIN required for that";
+      return new Response(JSON.stringify({ error: msg }), { status: 401, headers });
     }
 
     let result = null;
