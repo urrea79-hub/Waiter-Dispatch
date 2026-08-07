@@ -34,6 +34,7 @@ function apply(state, action, payload = {}) {
           techName: tech.name,
           time: new Date().toISOString(),
           advisor: (payload.advisor || "").trim().slice(0, 20) || null,
+          ro: (payload.ro || "").trim().slice(0, 12) || null,
           prevOrder,
         },
       ].slice(-300);
@@ -52,6 +53,7 @@ function apply(state, action, payload = {}) {
           techName: tech.name,
           time: new Date().toISOString(),
           advisor: (payload.advisor || "").trim().slice(0, 20) || "Manager",
+          ro: (payload.ro || "").trim().slice(0, 12) || null,
           direct: true,
           prevOrder,
         },

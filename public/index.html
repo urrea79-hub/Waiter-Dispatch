@@ -35,10 +35,11 @@
   .label { font-family: var(--disp); font-size: 15px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
   #nextName { font-family: var(--disp); font-weight: 700; font-size: clamp(48px, 9vw, 88px); line-height: 1.05; text-transform: uppercase; margin: 6px 0 10px; overflow-wrap: anywhere; }
   #nextName.empty { font-family: var(--body); font-weight: 400; font-size: 16px; color: var(--mute); text-transform: none; margin: 18px 0; }
-  .advrow { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px; }
+  .advrow { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px; flex-wrap: wrap; }
   .advrow label { font-size: 13px; color: var(--mute); }
   input[type=text] { background: var(--panel2); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 8px 10px; font-size: 14px; font-family: var(--body); }
   #advisor { width: 150px; }
+  #roInput { width: 110px; }
   #dispatchBtn { width: 100%; background: var(--red); color: #fff; border: none; border-radius: 8px; padding: 18px 16px; font-family: var(--disp); font-weight: 700; font-size: 26px; text-transform: uppercase; letter-spacing: .05em; }
   #dispatchBtn:disabled { background: #5A2530; }
   .subactions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
@@ -58,6 +59,7 @@
   .logtime { color: var(--mute); font-size: 12px; width: 68px; flex-shrink: 0; }
   .logtech { font-weight: 600; }
   .logadv { color: var(--mute); font-size: 12px; }
+  .logro { background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 2px 7px; font-size: 12px; font-weight: 600; letter-spacing: .03em; }
   #managePanel { display: none; margin-top: 16px; }
   #managePanel.open { display: block; }
   .addrow { display: flex; gap: 10px; margin: 12px 0 14px; }
@@ -125,7 +127,9 @@
       <div id="nextName" class="empty">Loading…</div>
       <div class="advrow">
         <label for="advisor">Advisor (optional)</label>
-        <input type="text" id="advisor" placeholder="Karina" maxlength="20">
+        <input type="text" id="advisor" maxlength="20">
+        <label for="roInput">RO #</label>
+        <input type="text" id="roInput" maxlength="12" inputmode="numeric" autocomplete="off">
       </div>
       <button id="dispatchBtn" disabled>Dispatch waiter</button>
       <div class="subactions">
@@ -293,6 +297,7 @@ function render() {
     : [...todays].reverse().slice(0, 30).map(e =>
         '<div class="logrow"><span class="logtime">' + timeStr(e.time) + '</span>' +
         '<span class="logtech">' + esc(e.techName) + '</span>' +
+        (e.ro ? '<span class="logro">RO ' + esc(e.ro) + '</span>' : "") +
         (e.direct ? '<span class="directtag">Direct</span>' : "") +
         (e.advisor ? '<span class="logadv">by ' + esc(e.advisor) + '</span>' : "") + '</div>'
       ).join("");
@@ -358,7 +363,10 @@ async function act(action, payload) {
   render();
 }
 
-$("dispatchBtn").onclick = () => act("dispatch", { advisor: $("advisor").value });
+$("dispatchBtn").onclick = async () => {
+  await act("dispatch", { advisor: $("advisor").value, ro: $("roInput").value });
+  $("roInput").value = "";
+};
 $("skipBtn").onclick = () => act("skip");
 $("undoBtn").onclick = () => act("undo");
 $("addBtn").onclick = () => {
@@ -379,7 +387,7 @@ $("directBtns").addEventListener("click", (e) => {
   if (!btn || btn.disabled) return;
   const t = state.techs.find(x => x.id === btn.dataset.direct);
   if (t && confirm("Dispatch a waiter directly to " + t.name + "? They'll move to the back of the rotation.")) {
-    act("dispatchTo", { id: t.id, advisor: $("advisor").value });
+    act("dispatchTo", { id: t.id, advisor: $("advisor").value, ro: $("roInput").value }).then(() => { $("roInput").value = ""; });
   }
 });
 
