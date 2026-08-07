@@ -1,374 +1,214 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Waiter Dispatch — Parkway Family Kia</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --red: #C4172C; --ink: #0B1620; --panel: #122232; --panel2: #18293B;
-    --line: #24384D; --text: #EDF2F7; --mute: #8FA3B5;
-    --disp: 'Barlow Condensed', 'Arial Narrow', sans-serif;
-    --body: 'Barlow', Arial, sans-serif;
-  }
-  * { box-sizing: border-box; margin: 0; }
-  body { background: var(--ink); color: var(--text); font-family: var(--body); padding: 20px 24px 40px; min-height: 100vh; }
-  header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid var(--red); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-  .brand { font-family: var(--disp); font-weight: 600; font-size: 15px; letter-spacing: .18em; text-transform: uppercase; color: var(--red); }
-  h1 { font-family: var(--disp); font-weight: 700; font-size: 34px; line-height: 1; text-transform: uppercase; letter-spacing: .03em; }
-  .hright { display: flex; align-items: center; gap: 10px; }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--mute); }
-  .dot.on { background: #3DD68C; }
-  .livetext { font-size: 12px; color: var(--mute); }
-  button { font-family: var(--body); cursor: pointer; }
-  button:disabled { cursor: default; opacity: .55; }
-  .ghost { background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 7px 14px; font-size: 13px; font-weight: 500; }
-  #flash { display: none; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
-  #flash.ok { display: block; background: #123B2A; border: 1px solid #1E6B4A; }
-  #flash.err { display: block; background: #3B1420; border: 1px solid #7A2438; }
-  .grid { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 16px; }
-  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; }
-  .nextcard { border-top: 4px solid var(--red); padding: 22px 24px; margin-bottom: 16px; }
-  .label { font-family: var(--disp); font-size: 15px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
-  #nextName { font-family: var(--disp); font-weight: 700; font-size: clamp(48px, 9vw, 88px); line-height: 1.05; text-transform: uppercase; margin: 6px 0 10px; overflow-wrap: anywhere; }
-  #nextName.empty { font-family: var(--body); font-weight: 400; font-size: 16px; color: var(--mute); text-transform: none; margin: 18px 0; }
-  .advrow { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px; }
-  .advrow label { font-size: 13px; color: var(--mute); }
-  input[type=text] { background: var(--panel2); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 8px 10px; font-size: 14px; font-family: var(--body); }
-  #advisor { width: 150px; }
-  #dispatchBtn { width: 100%; background: var(--red); color: #fff; border: none; border-radius: 8px; padding: 18px 16px; font-family: var(--disp); font-weight: 700; font-size: 26px; text-transform: uppercase; letter-spacing: .05em; }
-  #dispatchBtn:disabled { background: #5A2530; }
-  .subactions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
-  .sub { flex: 1; min-width: 160px; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; font-size: 14px; font-weight: 500; }
-  .deckrow { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
-  .deckpos { font-family: var(--disp); font-weight: 700; font-size: 22px; color: var(--red); width: 24px; }
-  .deckname { font-family: var(--disp); font-weight: 600; font-size: 26px; text-transform: uppercase; flex: 1; }
-  .deckcount, .muted { font-size: 13px; color: var(--mute); }
-  .outnote { margin-top: 10px; font-size: 13px; color: var(--mute); }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 14px; }
-  .chip { display: flex; align-items: center; gap: 8px; background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
-  .chip.out { opacity: .5; }
-  .chip .n { font-size: 13px; font-weight: 500; }
-  .chip .c { font-family: var(--disp); font-weight: 700; font-size: 18px; color: var(--red); }
-  #logList { max-height: 340px; overflow-y: auto; }
-  .logrow { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
-  .logtime { color: var(--mute); font-size: 12px; width: 68px; flex-shrink: 0; }
-  .logtech { font-weight: 600; }
-  .logadv { color: var(--mute); font-size: 12px; }
-  #managePanel { display: none; margin-top: 16px; }
-  #managePanel.open { display: block; }
-  .addrow { display: flex; gap: 10px; margin: 12px 0 14px; }
-  #newTech { flex: 1; max-width: 260px; }
-  .addbtn { background: var(--red); color: #fff; border: none; border-radius: 6px; padding: 9px 16px; font-weight: 600; font-size: 14px; }
-  .mrow { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
-  .mrow.out { opacity: .55; }
-  .mpos { font-family: var(--disp); font-weight: 700; font-size: 18px; color: var(--red); width: 22px; }
-  .mname { flex: 1; min-width: 120px; font-weight: 500; font-size: 15px; }
-  .mini { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 5px; padding: 5px 10px; font-size: 12px; }
-  .danger { background: transparent; color: #F09595; border: 1px solid #7A2438; border-radius: 5px; padding: 5px 10px; font-size: 12px; }
-  .mfoot { display: flex; align-items: center; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
-  #lockScreen { position: fixed; inset: 0; background: var(--ink); display: flex; align-items: center; justify-content: center; z-index: 50; }
-  .lockbox { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--red); border-radius: 10px; padding: 32px 36px; width: 340px; max-width: 90vw; text-align: center; }
-  .lockbox .brand { margin-bottom: 4px; }
-  .lockbox h2 { font-family: var(--disp); font-weight: 700; font-size: 28px; text-transform: uppercase; margin-bottom: 18px; }
-  #pinInput { width: 100%; text-align: center; font-size: 22px; letter-spacing: .3em; padding: 12px; margin-bottom: 12px; }
-  #pinBtn { width: 100%; background: var(--red); color: #fff; border: none; border-radius: 8px; padding: 13px; font-family: var(--disp); font-weight: 700; font-size: 20px; text-transform: uppercase; letter-spacing: .05em; }
-  #pinErr { color: #F09595; font-size: 13px; margin-top: 10px; min-height: 18px; }
-  .lockhint { color: var(--mute); font-size: 12px; margin-top: 14px; }
-  body.viewonly .advrow, body.viewonly #dispatchBtn, body.viewonly .subactions,
-  body.viewonly #manageToggle, body.viewonly #managePanel { display: none !important; }
-  .rolebadge { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; }
-</style>
-</head>
-<body>
-<div id="lockScreen">
-  <div class="lockbox">
-    <div class="brand">Parkway Family Kia</div>
-    <h2>Waiter dispatch</h2>
-    <input type="password" id="pinInput" placeholder="PIN" inputmode="numeric" autocomplete="off">
-    <button id="pinBtn">Unlock</button>
-    <div id="pinErr"></div>
-    <div class="lockhint">Advisor PIN unlocks dispatch controls.<br>Tech PIN opens the live board, view-only.</div>
-  </div>
-</div>
+import { getStore } from "@netlify/blobs";
 
-<header>
-  <div>
-    <div class="brand">Parkway Family Kia</div>
-    <h1>Waiter dispatch</h1>
-  </div>
-  <div class="hright">
-    <span class="rolebadge" id="roleBadge" style="display:none"></span>
-    <div class="dot" id="dot"></div>
-    <span class="livetext" id="liveText">Connecting…</span>
-    <button class="ghost" id="manageToggle">Manage techs</button>
-    <button class="ghost" id="lockBtn" style="display:none">Lock</button>
-  </div>
-</header>
+const KEY = "board-state";
+const emptyState = { techs: [], log: [], lastUpdate: null };
 
-<div id="flash"></div>
-
-<div class="grid">
-  <section>
-    <div class="card nextcard">
-      <div class="label">Next up for a waiter</div>
-      <div id="nextName" class="empty">Loading…</div>
-      <div class="advrow">
-        <label for="advisor">Advisor (optional)</label>
-        <input type="text" id="advisor" placeholder="Karina" maxlength="20">
-      </div>
-      <button id="dispatchBtn" disabled>Dispatch waiter</button>
-      <div class="subactions">
-        <button class="sub" id="skipBtn" disabled>Skip — tech unavailable</button>
-        <button class="sub" id="undoBtn" disabled>Undo last dispatch</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="label">On deck</div>
-      <div id="deck"><div class="muted">Loading…</div></div>
-      <div class="outnote" id="outNote"></div>
-    </div>
-  </section>
-
-  <section>
-    <div class="card">
-      <div class="label" id="logLabel">Today's dispatches</div>
-      <div class="chips" id="chips"></div>
-      <div id="logList"><div class="muted">Loading…</div></div>
-    </div>
-  </section>
-</div>
-
-<div class="card" id="managePanel">
-  <div class="label">Manage techs — rotation order, top gets the next waiter</div>
-  <div class="addrow">
-    <input type="text" id="newTech" placeholder="Tech name" maxlength="30">
-    <button class="addbtn" id="addBtn">Add tech</button>
-  </div>
-  <div id="manageList"></div>
-  <div class="mfoot">
-    <button class="danger" id="clearLogBtn">Clear dispatch log</button>
-    <span class="muted">Changes go live on every screen within a few seconds.</span>
-  </div>
-</div>
-
-<script>
-const API = "/api/board";
-let state = { techs: [], log: [] };
-let busy = false;
-let flashTimer = null;
-let auth = { pin: null, role: null };
-try {
-  const saved = JSON.parse(localStorage.getItem("dispatch-auth") || "null");
-  if (saved && saved.pin && saved.role) auth = saved;
-} catch (e) {}
-
-const $ = (id) => document.getElementById(id);
-
-function applyRole() {
-  const locked = !auth.role;
-  $("lockScreen").style.display = locked ? "flex" : "none";
-  $("lockBtn").style.display = locked ? "none" : "";
-  const badge = $("roleBadge");
-  badge.style.display = locked ? "none" : "";
-  badge.textContent = auth.role === "advisor" ? "Advisor" : "View only";
-  document.body.classList.toggle("viewonly", auth.role === "view");
-  if (!locked) poll();
-}
-
-function lockOut(msg) {
-  auth = { pin: null, role: null };
-  localStorage.removeItem("dispatch-auth");
-  applyRole();
-  if (msg) { $("pinErr").textContent = msg; }
-}
-
-async function login() {
-  const pin = $("pinInput").value.trim();
-  if (!pin) return;
-  $("pinErr").textContent = "";
+async function loadState(store) {
+  const raw = await store.get(KEY);
+  if (!raw) return { ...emptyState };
   try {
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "login", payload: { pin } })
-    });
-    const data = await res.json();
-    if (data.role) {
-      auth = { pin, role: data.role };
-      localStorage.setItem("dispatch-auth", JSON.stringify(auth));
-      $("pinInput").value = "";
-      applyRole();
-    } else {
-      $("pinErr").textContent = data.error || "Wrong PIN";
+    return JSON.parse(raw);
+  } catch {
+    return { ...emptyState };
+  }
+}
+
+function apply(state, action, payload = {}) {
+  const s = {
+    techs: [...state.techs.map((t) => ({ ...t }))],
+    log: [...state.log],
+    lastUpdate: state.lastUpdate,
+  };
+
+  switch (action) {
+    case "dispatch": {
+      const active = s.techs.filter((t) => !t.out);
+      if (active.length === 0) return { state: s, error: "No techs available" };
+      const tech = active[0];
+      const prevOrder = s.techs.map((t) => t.id);
+      s.techs = [...s.techs.filter((t) => t.id !== tech.id), tech];
+      s.log = [
+        ...s.log,
+        {
+          techId: tech.id,
+          techName: tech.name,
+          time: new Date().toISOString(),
+          advisor: (payload.advisor || "").trim().slice(0, 20) || null,
+          ro: (payload.ro || "").trim().slice(0, 12) || null,
+          prevOrder,
+        },
+      ].slice(-300);
+      return { state: s, message: `Waiter dispatched to ${tech.name}`, dispatched: tech.name };
     }
-  } catch (e) {
-    $("pinErr").textContent = "Connection failed — try again";
-  }
-}
-
-$("pinBtn").onclick = login;
-$("pinInput").addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
-$("lockBtn").onclick = () => lockOut("");
-
-function timeStr(iso) {
-  return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-}
-function isToday(iso) {
-  return new Date(iso).toLocaleDateString() === new Date().toLocaleDateString();
-}
-function esc(s) {
-  const d = document.createElement("div");
-  d.textContent = s;
-  return d.innerHTML;
-}
-
-function flash(type, msg) {
-  const el = $("flash");
-  el.className = type;
-  el.textContent = msg;
-  clearTimeout(flashTimer);
-  flashTimer = setTimeout(() => { el.className = ""; }, 4000);
-}
-
-function render() {
-  const active = state.techs.filter(t => !t.out);
-  const next = active[0] || null;
-  const todays = state.log.filter(e => isToday(e.time));
-  const counts = {};
-  todays.forEach(e => { counts[e.techName] = (counts[e.techName] || 0) + 1; });
-
-  const nn = $("nextName");
-  if (next) {
-    nn.textContent = next.name;
-    nn.className = "";
-  } else {
-    nn.textContent = state.techs.length === 0
-      ? "No techs on the board yet — open Manage techs to add your team"
-      : "All techs are marked out";
-    nn.className = "empty";
-  }
-
-  $("dispatchBtn").textContent = next ? "Dispatch waiter to " + next.name : "Dispatch waiter";
-  $("dispatchBtn").disabled = busy || !next;
-  $("skipBtn").disabled = busy || !next;
-  $("undoBtn").disabled = busy || state.log.length === 0;
-
-  const deck = active.slice(1, 4);
-  $("deck").innerHTML = deck.length === 0
-    ? '<div class="muted">No one else in line</div>'
-    : deck.map((t, i) =>
-        '<div class="deckrow"><span class="deckpos">' + (i + 2) + '</span>' +
-        '<span class="deckname">' + esc(t.name) + '</span>' +
-        '<span class="deckcount">' + (counts[t.name] || 0) + ' today</span></div>'
-      ).join("");
-
-  const outs = state.techs.filter(t => t.out);
-  $("outNote").textContent = outs.length ? "Out: " + outs.map(t => t.name).join(", ") : "";
-
-  $("logLabel").textContent = "Today's dispatches (" + todays.length + ")";
-  $("chips").innerHTML = state.techs.map(t =>
-    '<div class="chip' + (t.out ? " out" : "") + '"><span class="n">' + esc(t.name) +
-    '</span><span class="c">' + (counts[t.name] || 0) + '</span></div>'
-  ).join("");
-
-  $("logList").innerHTML = todays.length === 0
-    ? '<div class="muted">No waiters dispatched yet today</div>'
-    : [...todays].reverse().slice(0, 30).map(e =>
-        '<div class="logrow"><span class="logtime">' + timeStr(e.time) + '</span>' +
-        '<span class="logtech">' + esc(e.techName) + '</span>' +
-        (e.advisor ? '<span class="logadv">by ' + esc(e.advisor) + '</span>' : "") + '</div>'
-      ).join("");
-
-  $("manageList").innerHTML = state.techs.map((t, i) =>
-    '<div class="mrow' + (t.out ? " out" : "") + '"><span class="mpos">' + (i + 1) + '</span>' +
-    '<span class="mname">' + esc(t.name) + (t.out ? " — out" : "") + '</span>' +
-    '<button class="mini" data-act="moveup" data-id="' + t.id + '"' + (i === 0 ? " disabled" : "") + '>&#8593;</button>' +
-    '<button class="mini" data-act="movedown" data-id="' + t.id + '"' + (i === state.techs.length - 1 ? " disabled" : "") + '>&#8595;</button>' +
-    '<button class="mini" data-act="toggle" data-id="' + t.id + '">' + (t.out ? "Mark in" : "Mark out") + '</button>' +
-    '<button class="danger" data-act="remove" data-id="' + t.id + '">Remove</button></div>'
-  ).join("");
-}
-
-async function poll() {
-  if (!auth.pin) return;
-  try {
-    const res = await fetch(API, { cache: "no-store", headers: { "x-pin": auth.pin } });
-    if (res.status === 401) { lockOut("Session ended — enter your PIN"); return; }
-    const data = await res.json();
-    if (data.state) {
-      state = data.state;
-      render();
+    case "dispatchTo": {
+      const tech = s.techs.find((t) => t.id === payload.id);
+      if (!tech) return { state: s, error: "Tech not found" };
+      if (tech.out) return { state: s, error: `${tech.name} is marked out — mark them in first` };
+      const prevOrder = s.techs.map((t) => t.id);
+      s.techs = [...s.techs.filter((t) => t.id !== tech.id), tech];
+      s.log = [
+        ...s.log,
+        {
+          techId: tech.id,
+          techName: tech.name,
+          time: new Date().toISOString(),
+          advisor: (payload.advisor || "").trim().slice(0, 20) || "Manager",
+          ro: (payload.ro || "").trim().slice(0, 12) || null,
+          direct: true,
+          prevOrder,
+        },
+      ].slice(-300);
+      return { state: s, message: `Waiter dispatched directly to ${tech.name} — moved to back of line`, dispatched: tech.name };
     }
-    $("dot").className = "dot on";
-    $("liveText").textContent = "Live · synced " + new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" });
-  } catch (e) {
-    $("dot").className = "dot";
-    $("liveText").textContent = "Reconnecting…";
-  }
-}
-
-async function act(action, payload) {
-  if (busy || auth.role !== "advisor") return;
-  busy = true;
-  render();
-  try {
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-pin": auth.pin },
-      body: JSON.stringify({ action, payload })
-    });
-    const data = await res.json();
-    if (res.status === 401) {
-      busy = false;
-      lockOut(data.error || "Session ended — enter your PIN");
-      return;
+    case "skip": {
+      const active = s.techs.filter((t) => !t.out);
+      if (active.length === 0) return { state: s, error: "No techs available" };
+      const tech = active[0];
+      s.techs = [...s.techs.filter((t) => t.id !== tech.id), tech];
+      return { state: s, message: `${tech.name} moved to back — no waiter logged` };
     }
-    if (data.state) { state = data.state; }
-    if (data.error) flash("err", data.error);
-    else if (data.message) flash("ok", data.message);
-  } catch (e) {
-    flash("err", "Connection failed — action may not have saved. Check the log.");
+    case "undo": {
+      if (s.log.length === 0) return { state: s, error: "Nothing to undo" };
+      const last = s.log[s.log.length - 1];
+      if (last.prevOrder) {
+        const map = Object.fromEntries(s.techs.map((t) => [t.id, t]));
+        const restored = last.prevOrder.map((id) => map[id]).filter(Boolean);
+        s.techs.forEach((t) => {
+          if (!last.prevOrder.includes(t.id)) restored.push(t);
+        });
+        s.techs = restored;
+      }
+      s.log = s.log.slice(0, -1);
+      return { state: s, message: `Undid dispatch to ${last.techName}` };
+    }
+    case "addTech": {
+      const name = (payload.name || "").trim().slice(0, 30);
+      if (!name) return { state: s, error: "Enter a tech name" };
+      if (s.techs.some((t) => t.name.toLowerCase() === name.toLowerCase()))
+        return { state: s, error: `${name} is already on the board` };
+      s.techs = [...s.techs, { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, out: false }];
+      return { state: s, message: `${name} added` };
+    }
+    case "removeTech": {
+      s.techs = s.techs.filter((t) => t.id !== payload.id);
+      return { state: s };
+    }
+    case "toggleOut": {
+      s.techs = s.techs.map((t) => (t.id === payload.id ? { ...t, out: !t.out } : t));
+      return { state: s };
+    }
+    case "move": {
+      const i = s.techs.findIndex((t) => t.id === payload.id);
+      const j = i + (payload.dir === "up" ? -1 : 1);
+      if (i < 0 || j < 0 || j >= s.techs.length) return { state: s };
+      const arr = [...s.techs];
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      s.techs = arr;
+      return { state: s };
+    }
+    case "clearLog": {
+      s.log = [];
+      return { state: s, message: "Dispatch log cleared" };
+    }
+    default:
+      return { state: s, error: "Unknown action" };
   }
-  busy = false;
-  render();
 }
 
-$("dispatchBtn").onclick = () => act("dispatch", { advisor: $("advisor").value });
-$("skipBtn").onclick = () => act("skip");
-$("undoBtn").onclick = () => act("undo");
-$("addBtn").onclick = () => {
-  const name = $("newTech").value;
-  if (name.trim()) { act("addTech", { name }); $("newTech").value = ""; }
-};
-$("newTech").addEventListener("keydown", (e) => { if (e.key === "Enter") $("addBtn").click(); });
-$("clearLogBtn").onclick = () => {
-  if (confirm("Clear the entire dispatch log? Daily counts reset to zero.")) act("clearLog");
-};
-$("manageToggle").onclick = () => {
-  const p = $("managePanel");
-  p.classList.toggle("open");
-  $("manageToggle").textContent = p.classList.contains("open") ? "Close manage" : "Manage techs";
-};
-$("manageList").addEventListener("click", (e) => {
-  const btn = e.target.closest("button[data-act]");
-  if (!btn || btn.disabled) return;
-  const id = btn.dataset.id;
-  const a = btn.dataset.act;
-  if (a === "moveup") act("move", { id, dir: "up" });
-  if (a === "movedown") act("move", { id, dir: "down" });
-  if (a === "toggle") act("toggleOut", { id });
-  if (a === "remove") {
-    const t = state.techs.find(x => x.id === id);
-    if (confirm("Remove " + (t ? t.name : "this tech") + " from the board?")) act("removeTech", { id });
-  }
-});
+export default async (req) => {
+  const store = getStore("dispatch");
+  const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
 
-applyRole();
-setInterval(poll, 3000);
-</script>
-</body>
-</html>
+  const MANAGER_PIN = process.env.MANAGER_PIN || "8642";
+  const ADVISOR_PIN = process.env.ADVISOR_PIN || "2468";
+  const VIEW_PIN = process.env.VIEW_PIN || "1357";
+
+  const roleFor = (pin) => {
+    if (!pin) return null;
+    if (pin === MANAGER_PIN) return "manager";
+    if (pin === ADVISOR_PIN) return "advisor";
+    if (pin === VIEW_PIN) return "view";
+    return null;
+  };
+
+  const PERMS = {
+    dispatch: ["advisor", "manager"],
+    skip: ["advisor", "manager"],
+    undo: ["advisor", "manager"],
+    dispatchTo: ["manager"],
+    addTech: ["manager"],
+    removeTech: ["manager"],
+    toggleOut: ["manager"],
+    move: ["manager"],
+    clearLog: ["manager"],
+  };
+
+  if (req.method === "GET") {
+    const role = roleFor(req.headers.get("x-pin"));
+    if (!role) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers });
+    }
+    const state = await loadState(store);
+    return new Response(JSON.stringify({ state, role }), { headers });
+  }
+
+  if (req.method === "POST") {
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Bad request" }), { status: 400, headers });
+    }
+
+    if (body.action === "login") {
+      const role = roleFor((body.payload && body.payload.pin) || "");
+      if (!role) {
+        return new Response(JSON.stringify({ error: "Wrong PIN" }), { status: 401, headers });
+      }
+      return new Response(JSON.stringify({ role }), { headers });
+    }
+
+    const role = roleFor(req.headers.get("x-pin"));
+    const allowed = PERMS[body.action] || [];
+    if (!role || !allowed.includes(role)) {
+      let msg = "unauthorized";
+      if (role === "view") msg = "View-only access — no dispatch permissions";
+      else if (role === "advisor") msg = "Manager PIN required for that";
+      return new Response(JSON.stringify({ error: msg }), { status: 401, headers });
+    }
+
+    let result = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      let current = { ...emptyState };
+      let etag = null;
+      try {
+        const entry = await store.getWithMetadata(KEY);
+        if (entry && entry.data) {
+          current = JSON.parse(entry.data);
+          etag = entry.etag || null;
+        }
+      } catch {}
+
+      result = apply(current, body.action, body.payload);
+      if (result.error) break;
+
+      result.state.lastUpdate = new Date().toISOString();
+      const json = JSON.stringify(result.state);
+      try {
+        const opts = etag ? { onlyIfMatch: etag } : { onlyIfNew: true };
+        const wr = await store.set(KEY, json, opts);
+        if (!wr || wr.modified !== false) break;
+      } catch {
+        await store.set(KEY, json);
+        break;
+      }
+      if (attempt === 3) result = { error: "Board is busy — try again" };
+    }
+
+    return new Response(JSON.stringify(result), { headers });
+  }
+
+  return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
+};
+
+export const config = { path: "/api/board" };
