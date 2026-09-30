@@ -10,6 +10,7 @@
   :root {
     --red: #C4172C; --ink: #0B1620; --panel: #122232; --panel2: #18293B;
     --line: #24384D; --text: #EDF2F7; --mute: #8FA3B5;
+    --green: #3DD68C; --amber: #F0B429; --late: #FF6B6B;
     --disp: 'Barlow Condensed', 'Arial Narrow', sans-serif;
     --body: 'Barlow', Arial, sans-serif;
   }
@@ -18,48 +19,83 @@
   header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid var(--red); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
   .brand { font-family: var(--disp); font-weight: 600; font-size: 15px; letter-spacing: .18em; text-transform: uppercase; color: var(--red); }
   h1 { font-family: var(--disp); font-weight: 700; font-size: 34px; line-height: 1; text-transform: uppercase; letter-spacing: .03em; }
-  .hright { display: flex; align-items: center; gap: 10px; }
+  .hright { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--mute); }
-  .dot.on { background: #3DD68C; }
+  .dot.on { background: var(--green); }
   .livetext { font-size: 12px; color: var(--mute); }
   button { font-family: var(--body); cursor: pointer; }
   button:disabled { cursor: default; opacity: .55; }
   .ghost { background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 7px 14px; font-size: 13px; font-weight: 500; }
+  .rolebadge { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; }
+
+  .tabs { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab { background: var(--panel); border: 1px solid var(--line); color: var(--mute); border-radius: 8px; padding: 12px 22px; font-family: var(--disp); font-weight: 700; font-size: 22px; text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 10px; }
+  .tab.active { color: var(--text); border-color: var(--red); box-shadow: inset 0 -3px 0 var(--red); }
+  .tabcount { font-family: var(--body); font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; background: var(--red); color: #fff; border-radius: 10px; padding: 2px 9px; }
+  .tabcount:empty { display: none; }
+
   #flash { display: none; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
   #flash.ok { display: block; background: #123B2A; border: 1px solid #1E6B4A; }
   #flash.err { display: block; background: #3B1420; border: 1px solid #7A2438; }
-  .grid { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 16px; }
-  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+  .grid { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 16px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; }
-  .nextcard { border-top: 4px solid var(--red); padding: 22px 24px; margin-bottom: 16px; }
+  .nextcard { border-top: 4px solid var(--red); padding: 22px 24px; }
   .label { font-family: var(--disp); font-size: 15px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
-  #nextName { font-family: var(--disp); font-weight: 700; font-size: clamp(48px, 9vw, 88px); line-height: 1.05; text-transform: uppercase; margin: 6px 0 10px; overflow-wrap: anywhere; }
+  #nextName { font-family: var(--disp); font-weight: 700; font-size: clamp(48px, 8vw, 84px); line-height: 1.05; text-transform: uppercase; margin: 6px 0 10px; overflow-wrap: anywhere; }
   #nextName.empty { font-family: var(--body); font-weight: 400; font-size: 16px; color: var(--mute); text-transform: none; margin: 18px 0; }
   .advrow { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px; flex-wrap: wrap; }
   .advrow label { font-size: 13px; color: var(--mute); }
-  input[type=text] { background: var(--panel2); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 8px 10px; font-size: 14px; font-family: var(--body); }
+  input[type=text], input[type=password] { background: var(--panel2); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 8px 10px; font-size: 14px; font-family: var(--body); }
   #advisor { width: 150px; }
   #roInput { width: 110px; }
   #dispatchBtn { width: 100%; background: var(--red); color: #fff; border: none; border-radius: 8px; padding: 18px 16px; font-family: var(--disp); font-weight: 700; font-size: 26px; text-transform: uppercase; letter-spacing: .05em; }
   #dispatchBtn:disabled { background: #5A2530; }
   .subactions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
   .sub { flex: 1; min-width: 160px; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; font-size: 14px; font-weight: 500; }
+
   .deckrow { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
   .deckpos { font-family: var(--disp); font-weight: 700; font-size: 22px; color: var(--red); width: 24px; }
   .deckname { font-family: var(--disp); font-weight: 600; font-size: 26px; text-transform: uppercase; flex: 1; }
   .deckcount, .muted { font-size: 13px; color: var(--mute); }
   .outnote { margin-top: 10px; font-size: 13px; color: var(--mute); }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 14px; }
+
+  .directbtns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .directbtn { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-left: 3px solid var(--red); border-radius: 6px; padding: 10px 16px; font-family: var(--disp); font-weight: 600; font-size: 18px; text-transform: uppercase; letter-spacing: .03em; }
+  .directbtn:disabled { border-left-color: var(--line); }
+  .directtag { background: var(--red); color: #fff; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; border-radius: 3px; padding: 2px 6px; }
+  .logro { background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 2px 7px; font-size: 12px; font-weight: 600; letter-spacing: .03em; font-family: var(--body); text-transform: none; }
+
+  .shoprow { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .shopmain { flex: 1; min-width: 150px; }
+  .shoptech { font-family: var(--disp); font-weight: 700; font-size: 24px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .shopmeta { font-size: 12px; color: var(--mute); margin-top: 2px; }
+  .timer { font-family: var(--disp); font-weight: 700; font-size: 32px; min-width: 100px; text-align: right; font-variant-numeric: tabular-nums; }
+  .timer.ok { color: var(--green); }
+  .timer.warn { color: var(--amber); }
+  .timer.late { color: var(--late); }
+  .completebtn { background: #1E6B4A; color: #fff; border: none; border-radius: 6px; padding: 11px 16px; font-size: 14px; font-weight: 600; }
+  .legend { font-size: 12px; color: var(--mute); margin-top: 10px; }
+
+  .stats { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
+  .stat { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; min-width: 90px; }
+  .stat .v { font-family: var(--disp); font-weight: 700; font-size: 24px; }
+  .stat .k { font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: .08em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
   .chip { display: flex; align-items: center; gap: 8px; background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
   .chip.out { opacity: .5; }
   .chip .n { font-size: 13px; font-weight: 500; }
   .chip .c { font-family: var(--disp); font-weight: 700; font-size: 18px; color: var(--red); }
-  #logList { max-height: 340px; overflow-y: auto; }
-  .logrow { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  #doneList { max-height: 360px; overflow-y: auto; }
+  .logrow { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; flex-wrap: wrap; }
   .logtime { color: var(--mute); font-size: 12px; width: 68px; flex-shrink: 0; }
   .logtech { font-weight: 600; }
-  .logadv { color: var(--mute); font-size: 12px; }
-  .logro { background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 2px 7px; font-size: 12px; font-weight: 600; letter-spacing: .03em; }
+  .logdur { font-family: var(--disp); font-weight: 700; font-size: 17px; }
+  .logadv { color: var(--mute); font-size: 12px; flex: 1; }
+  .reopen { background: transparent; color: var(--mute); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; font-size: 11px; }
+
   #managePanel { display: none; margin-top: 16px; }
   #managePanel.open { display: block; }
   .addrow { display: flex; gap: 10px; margin: 12px 0 14px; }
@@ -72,27 +108,21 @@
   .mini { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 5px; padding: 5px 10px; font-size: 12px; }
   .danger { background: transparent; color: #F09595; border: 1px solid #7A2438; border-radius: 5px; padding: 5px 10px; font-size: 12px; }
   .mfoot { display: flex; align-items: center; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
+
   #lockScreen { position: fixed; inset: 0; background: var(--ink); display: flex; align-items: center; justify-content: center; z-index: 50; }
   .lockbox { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--red); border-radius: 10px; padding: 32px 36px; width: 340px; max-width: 90vw; text-align: center; }
-  .lockbox .brand { margin-bottom: 4px; }
-  .lockbox h2 { font-family: var(--disp); font-weight: 700; font-size: 28px; text-transform: uppercase; margin-bottom: 18px; }
+  .lockbox h2 { font-family: var(--disp); font-weight: 700; font-size: 28px; text-transform: uppercase; margin: 4px 0 18px; }
   #pinInput { width: 100%; text-align: center; font-size: 22px; letter-spacing: .3em; padding: 12px; margin-bottom: 12px; }
   #pinBtn { width: 100%; background: var(--red); color: #fff; border: none; border-radius: 8px; padding: 13px; font-family: var(--disp); font-weight: 700; font-size: 20px; text-transform: uppercase; letter-spacing: .05em; }
   #pinErr { color: #F09595; font-size: 13px; margin-top: 10px; min-height: 18px; }
   .lockhint { color: var(--mute); font-size: 12px; margin-top: 14px; }
-  body.role-view .advrow, body.role-view #dispatchBtn, body.role-view .subactions,
-  body.role-view #manageToggle, body.role-view #managePanel, body.role-view #directCard { display: none !important; }
-  body.role-advisor #manageToggle, body.role-advisor #managePanel,
-  body.role-advisor #directCard { display: none !important; }
-  #directCard { margin-top: 16px; }
-  .directbtns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-  .directbtn { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-left: 3px solid var(--red); border-radius: 6px; padding: 10px 16px; font-family: var(--disp); font-weight: 600; font-size: 18px; text-transform: uppercase; letter-spacing: .03em; }
-  .directbtn:disabled { border-left-color: var(--line); }
-  .directtag { background: var(--red); color: #fff; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; border-radius: 3px; padding: 2px 6px; }
-  .rolebadge { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; }
+
+  body.role-view .adv-only { display: none !important; }
+  body.role-view .mgr-only, body.role-advisor .mgr-only { display: none !important; }
 </style>
 </head>
 <body>
+
 <div id="lockScreen">
   <div class="lockbox">
     <div class="brand">Parkway Family Kia</div>
@@ -113,76 +143,224 @@
     <span class="rolebadge" id="roleBadge" style="display:none"></span>
     <div class="dot" id="dot"></div>
     <span class="livetext" id="liveText">Connecting…</span>
-    <button class="ghost" id="manageToggle">Manage techs</button>
+    <button class="ghost mgr-only" id="manageToggle">Manage techs</button>
     <button class="ghost" id="lockBtn" style="display:none">Lock</button>
   </div>
 </header>
 
+<nav class="tabs">
+  <button class="tab" id="tab-main" data-line="main">Main line <span class="tabcount"></span></button>
+  <button class="tab" id="tab-express" data-line="express">Express <span class="tabcount"></span></button>
+</nav>
+
 <div id="flash"></div>
 
 <div class="grid">
-  <section>
+  <section class="col">
     <div class="card nextcard">
-      <div class="label">Next up for a waiter</div>
+      <div class="label" id="nextLabel">Next up</div>
       <div id="nextName" class="empty">Loading…</div>
-      <div class="advrow">
+      <div class="advrow adv-only">
         <label for="advisor">Advisor (optional)</label>
         <input type="text" id="advisor" maxlength="20">
         <label for="roInput">RO #</label>
         <input type="text" id="roInput" maxlength="12" inputmode="numeric" autocomplete="off">
       </div>
-      <button id="dispatchBtn" disabled>Dispatch waiter</button>
-      <div class="subactions">
+      <button id="dispatchBtn" class="adv-only" disabled>Dispatch waiter</button>
+      <div class="subactions adv-only">
         <button class="sub" id="skipBtn" disabled>Skip — tech unavailable</button>
         <button class="sub" id="undoBtn" disabled>Undo last dispatch</button>
       </div>
     </div>
+
     <div class="card">
       <div class="label">On deck</div>
       <div id="deck"><div class="muted">Loading…</div></div>
       <div class="outnote" id="outNote"></div>
     </div>
-    <div class="card" id="directCard">
+
+    <div class="card mgr-only" id="directCard">
       <div class="label">Direct dispatch — manager</div>
-      <div class="muted" style="margin-top:6px">Send a waiter to a specific tech. They drop to the back of the rotation and it's logged as direct.</div>
+      <div class="muted" style="margin-top:6px">Send a waiter to a specific tech. They drop to the back of this line's rotation and it's logged as direct.</div>
       <div class="directbtns" id="directBtns"></div>
     </div>
   </section>
 
-  <section>
+  <section class="col">
     <div class="card">
-      <div class="label" id="logLabel">Today's dispatches</div>
+      <div class="label" id="shopLabel">Waiters in shop</div>
+      <div id="shopList"><div class="muted">Loading…</div></div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="card">
+      <div class="label">Completed today</div>
+      <div class="stats" id="stats"></div>
       <div class="chips" id="chips"></div>
-      <div id="logList"><div class="muted">Loading…</div></div>
+      <div id="doneList"></div>
     </div>
   </section>
 </div>
 
-<div class="card" id="managePanel">
-  <div class="label">Manage techs — rotation order, top gets the next waiter</div>
+<div class="card mgr-only" id="managePanel">
+  <div class="label" id="manageLabel">Manage techs</div>
   <div class="addrow">
     <input type="text" id="newTech" placeholder="Tech name" maxlength="30">
     <button class="addbtn" id="addBtn">Add tech</button>
   </div>
   <div id="manageList"></div>
   <div class="mfoot">
-    <button class="danger" id="clearLogBtn">Clear dispatch log</button>
+    <button class="danger" id="clearLogBtn">Clear completed history</button>
     <span class="muted">Changes go live on every screen within a few seconds.</span>
   </div>
 </div>
 
 <script>
 const API = "/api/board";
-let state = { techs: [], log: [] };
+const LINES = ["main", "express"];
+const LINE_NAMES = { main: "Main line", express: "Express" };
+// Timer color thresholds in minutes: [turns amber, turns red]
+const THRESH = { main: [60, 90], express: [30, 45] };
+
+let state = { lines: { main: { techs: [] }, express: { techs: [] } }, log: [] };
 let busy = false;
 let flashTimer = null;
+let clockOffset = 0;
 let auth = { pin: null, role: null };
+let line = "main";
 try {
   const saved = JSON.parse(localStorage.getItem("dispatch-auth") || "null");
   if (saved && saved.pin && saved.role) auth = saved;
+  const l = localStorage.getItem("dispatch-line");
+  if (LINES.includes(l)) line = l;
 } catch (e) {}
 
 const $ = (id) => document.getElementById(id);
+const now = () => Date.now() + clockOffset;
+
+function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+function timeStr(iso) { return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }); }
+function isToday(iso) { return new Date(iso).toLocaleDateString() === new Date(now()).toLocaleDateString(); }
+function fmtDur(ms) { const m = Math.max(0, Math.round(ms / 60000)); const h = Math.floor(m / 60); return h ? h + "h " + (m % 60) + "m" : m + "m"; }
+function fmtClock(ms) {
+  const t = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+  const p = (n) => String(n).padStart(2, "0");
+  return h ? h + ":" + p(m) + ":" + p(s) : m + ":" + p(s);
+}
+function techsOf(l) { return (state.lines && state.lines[l] && state.lines[l].techs) || []; }
+function roTag(e) { return e.ro ? '<span class="logro">RO ' + esc(e.ro) + '</span>' : ""; }
+
+function flash(type, msg) {
+  const el = $("flash");
+  el.className = type;
+  el.textContent = msg;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { el.className = ""; }, 4500);
+}
+
+function tick() {
+  const t = now();
+  document.querySelectorAll(".timer[data-since]").forEach((el) => {
+    const ms = t - Date.parse(el.dataset.since);
+    const [warn, late] = THRESH[el.dataset.line] || THRESH.main;
+    const min = ms / 60000;
+    el.textContent = fmtClock(ms);
+    el.className = "timer " + (min >= late ? "late" : min >= warn ? "warn" : "ok");
+  });
+}
+
+function render() {
+  const lname = LINE_NAMES[line];
+  const techs = techsOf(line);
+  const active = techs.filter((t) => !t.out);
+  const next = active[0] || null;
+  const lineLog = state.log.filter((e) => e.line === line);
+  const today = lineLog.filter((e) => isToday(e.time));
+  const inShop = lineLog.filter((e) => !e.completedAt).sort((a, b) => Date.parse(a.time) - Date.parse(b.time));
+  const doneToday = lineLog.filter((e) => e.completedAt && isToday(e.completedAt))
+    .sort((a, b) => Date.parse(b.completedAt) - Date.parse(a.completedAt));
+  const timed = doneToday.filter((e) => !e.untracked);
+  const counts = {};
+  today.forEach((e) => { counts[e.techName] = (counts[e.techName] || 0) + 1; });
+
+  LINES.forEach((l) => {
+    const btn = $("tab-" + l);
+    btn.classList.toggle("active", l === line);
+    const n = state.log.filter((e) => e.line === l && !e.completedAt).length;
+    btn.querySelector(".tabcount").textContent = n ? n + " in shop" : "";
+  });
+
+  $("nextLabel").textContent = "Next up — " + lname;
+  const nn = $("nextName");
+  if (next) { nn.textContent = next.name; nn.className = ""; }
+  else {
+    nn.textContent = techs.length === 0 ? "No " + lname + " techs yet — manager can add them under Manage techs" : "All " + lname + " techs are marked out";
+    nn.className = "empty";
+  }
+  $("dispatchBtn").textContent = next ? "Dispatch waiter to " + next.name : "Dispatch waiter";
+  $("dispatchBtn").disabled = busy || !next;
+  $("skipBtn").disabled = busy || !next;
+  $("undoBtn").disabled = busy || !lineLog.some((e) => !e.untracked);
+
+  const deck = active.slice(1, 4);
+  $("deck").innerHTML = deck.length === 0 ? '<div class="muted">No one else in line</div>'
+    : deck.map((t, i) => '<div class="deckrow"><span class="deckpos">' + (i + 2) + '</span><span class="deckname">' + esc(t.name) +
+        '</span><span class="deckcount">' + (counts[t.name] || 0) + ' today</span></div>').join("");
+  const outs = techs.filter((t) => t.out);
+  $("outNote").textContent = outs.length ? "Out: " + outs.map((t) => t.name).join(", ") : "";
+
+  $("directBtns").innerHTML = techs.length === 0 ? '<div class="muted">Add techs first</div>'
+    : techs.map((t) => '<button class="directbtn" data-direct="' + t.id + '"' + (t.out ? " disabled" : "") + '>' + esc(t.name) + (t.out ? " — out" : "") + '</button>').join("");
+
+  $("shopLabel").textContent = "Waiters in shop — " + lname + " (" + inShop.length + ")";
+  $("shopList").innerHTML = inShop.length === 0 ? '<div class="muted">No waiters in the shop right now</div>'
+    : inShop.map((e) =>
+        '<div class="shoprow"><div class="shopmain">' +
+          '<div class="shoptech">' + esc(e.techName) + roTag(e) + (e.direct ? '<span class="directtag">Direct</span>' : "") + '</div>' +
+          '<div class="shopmeta">In at ' + timeStr(e.time) + (e.advisor ? ' · ' + esc(e.advisor) : "") + '</div>' +
+        '</div>' +
+        '<span class="timer" data-since="' + esc(e.time) + '" data-line="' + e.line + '"></span>' +
+        '<button class="completebtn adv-only" data-complete="' + esc(e.id) + '"' + (busy ? " disabled" : "") + '>Complete</button>' +
+        '</div>').join("");
+  const [w, r] = THRESH[line];
+  $("legend").textContent = inShop.length ? "Timer turns amber at " + w + " min, red at " + r + " min." : "";
+
+  const avg = timed.length ? timed.reduce((sum, e) => sum + (Date.parse(e.completedAt) - Date.parse(e.time)), 0) / timed.length : null;
+  const longest = timed.length ? Math.max(...timed.map((e) => Date.parse(e.completedAt) - Date.parse(e.time))) : null;
+  $("stats").innerHTML =
+    '<div class="stat"><div class="v">' + today.length + '</div><div class="k">Dispatched</div></div>' +
+    '<div class="stat"><div class="v">' + doneToday.length + '</div><div class="k">Completed</div></div>' +
+    '<div class="stat"><div class="v">' + (avg == null ? "—" : fmtDur(avg)) + '</div><div class="k">Avg time</div></div>' +
+    '<div class="stat"><div class="v">' + (longest == null ? "—" : fmtDur(longest)) + '</div><div class="k">Longest</div></div>';
+
+  $("chips").innerHTML = techs.map((t) => '<div class="chip' + (t.out ? " out" : "") + '"><span class="n">' + esc(t.name) +
+    '</span><span class="c">' + (counts[t.name] || 0) + '</span></div>').join("");
+
+  $("doneList").innerHTML = doneToday.length === 0 ? '<div class="muted">Nothing completed yet today</div>'
+    : doneToday.slice(0, 40).map((e) =>
+        '<div class="logrow"><span class="logtime">' + timeStr(e.completedAt) + '</span>' +
+        '<span class="logtech">' + esc(e.techName) + '</span>' + roTag(e) +
+        (e.direct ? '<span class="directtag">Direct</span>' : "") +
+        '<span class="logdur">' + (e.untracked ? "—" : fmtDur(Date.parse(e.completedAt) - Date.parse(e.time))) + '</span>' +
+        '<span class="logadv">' + (e.advisor ? "by " + esc(e.advisor) : "") + '</span>' +
+        (e.untracked ? "" : '<button class="reopen adv-only" data-reopen="' + esc(e.id) + '">Reopen</button>') +
+        '</div>').join("");
+
+  const other = line === "main" ? "express" : "main";
+  $("manageLabel").textContent = "Manage techs — " + lname + " (top gets the next waiter)";
+  $("manageList").innerHTML = techs.length === 0 ? '<div class="muted">No techs on ' + lname + ' yet</div>'
+    : techs.map((t, i) =>
+        '<div class="mrow' + (t.out ? " out" : "") + '"><span class="mpos">' + (i + 1) + '</span>' +
+        '<span class="mname">' + esc(t.name) + (t.out ? " — out" : "") + '</span>' +
+        '<button class="mini" data-act="moveup" data-id="' + t.id + '"' + (i === 0 ? " disabled" : "") + '>&#8593;</button>' +
+        '<button class="mini" data-act="movedown" data-id="' + t.id + '"' + (i === techs.length - 1 ? " disabled" : "") + '>&#8595;</button>' +
+        '<button class="mini" data-act="toggle" data-id="' + t.id + '">' + (t.out ? "Mark in" : "Mark out") + '</button>' +
+        '<button class="mini" data-act="switch" data-id="' + t.id + '">Move to ' + LINE_NAMES[other] + '</button>' +
+        '<button class="danger" data-act="remove" data-id="' + t.id + '">Remove</button></div>').join("");
+
+  tick();
+}
 
 function applyRole() {
   const locked = !auth.role;
@@ -198,9 +376,9 @@ function applyRole() {
 
 function lockOut(msg) {
   auth = { pin: null, role: null };
-  localStorage.removeItem("dispatch-auth");
+  try { localStorage.removeItem("dispatch-auth"); } catch (e) {}
   applyRole();
-  if (msg) { $("pinErr").textContent = msg; }
+  $("pinErr").textContent = msg || "";
 }
 
 async function login() {
@@ -208,15 +386,11 @@ async function login() {
   if (!pin) return;
   $("pinErr").textContent = "";
   try {
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "login", payload: { pin } })
-    });
+    const res = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "login", payload: { pin } }) });
     const data = await res.json();
     if (data.role) {
       auth = { pin, role: data.role };
-      localStorage.setItem("dispatch-auth", JSON.stringify(auth));
+      try { localStorage.setItem("dispatch-auth", JSON.stringify(auth)); } catch (e) {}
       $("pinInput").value = "";
       applyRole();
     } else {
@@ -227,108 +401,14 @@ async function login() {
   }
 }
 
-$("pinBtn").onclick = login;
-$("pinInput").addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
-$("lockBtn").onclick = () => lockOut("");
-
-function timeStr(iso) {
-  return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-}
-function isToday(iso) {
-  return new Date(iso).toLocaleDateString() === new Date().toLocaleDateString();
-}
-function esc(s) {
-  const d = document.createElement("div");
-  d.textContent = s;
-  return d.innerHTML;
-}
-
-function flash(type, msg) {
-  const el = $("flash");
-  el.className = type;
-  el.textContent = msg;
-  clearTimeout(flashTimer);
-  flashTimer = setTimeout(() => { el.className = ""; }, 4000);
-}
-
-function render() {
-  const active = state.techs.filter(t => !t.out);
-  const next = active[0] || null;
-  const todays = state.log.filter(e => isToday(e.time));
-  const counts = {};
-  todays.forEach(e => { counts[e.techName] = (counts[e.techName] || 0) + 1; });
-
-  const nn = $("nextName");
-  if (next) {
-    nn.textContent = next.name;
-    nn.className = "";
-  } else {
-    nn.textContent = state.techs.length === 0
-      ? "No techs on the board yet — open Manage techs to add your team"
-      : "All techs are marked out";
-    nn.className = "empty";
-  }
-
-  $("dispatchBtn").textContent = next ? "Dispatch waiter to " + next.name : "Dispatch waiter";
-  $("dispatchBtn").disabled = busy || !next;
-  $("skipBtn").disabled = busy || !next;
-  $("undoBtn").disabled = busy || state.log.length === 0;
-
-  const deck = active.slice(1, 4);
-  $("deck").innerHTML = deck.length === 0
-    ? '<div class="muted">No one else in line</div>'
-    : deck.map((t, i) =>
-        '<div class="deckrow"><span class="deckpos">' + (i + 2) + '</span>' +
-        '<span class="deckname">' + esc(t.name) + '</span>' +
-        '<span class="deckcount">' + (counts[t.name] || 0) + ' today</span></div>'
-      ).join("");
-
-  const outs = state.techs.filter(t => t.out);
-  $("outNote").textContent = outs.length ? "Out: " + outs.map(t => t.name).join(", ") : "";
-
-  $("logLabel").textContent = "Today's dispatches (" + todays.length + ")";
-  $("chips").innerHTML = state.techs.map(t =>
-    '<div class="chip' + (t.out ? " out" : "") + '"><span class="n">' + esc(t.name) +
-    '</span><span class="c">' + (counts[t.name] || 0) + '</span></div>'
-  ).join("");
-
-  $("logList").innerHTML = todays.length === 0
-    ? '<div class="muted">No waiters dispatched yet today</div>'
-    : [...todays].reverse().slice(0, 30).map(e =>
-        '<div class="logrow"><span class="logtime">' + timeStr(e.time) + '</span>' +
-        '<span class="logtech">' + esc(e.techName) + '</span>' +
-        (e.ro ? '<span class="logro">RO ' + esc(e.ro) + '</span>' : "") +
-        (e.direct ? '<span class="directtag">Direct</span>' : "") +
-        (e.advisor ? '<span class="logadv">by ' + esc(e.advisor) + '</span>' : "") + '</div>'
-      ).join("");
-
-  $("directBtns").innerHTML = state.techs.length === 0
-    ? '<div class="muted">Add techs first</div>'
-    : state.techs.map(t =>
-        '<button class="directbtn" data-direct="' + t.id + '"' + (t.out ? " disabled" : "") + '>' +
-        esc(t.name) + (t.out ? " — out" : "") + '</button>'
-      ).join("");
-
-  $("manageList").innerHTML = state.techs.map((t, i) =>
-    '<div class="mrow' + (t.out ? " out" : "") + '"><span class="mpos">' + (i + 1) + '</span>' +
-    '<span class="mname">' + esc(t.name) + (t.out ? " — out" : "") + '</span>' +
-    '<button class="mini" data-act="moveup" data-id="' + t.id + '"' + (i === 0 ? " disabled" : "") + '>&#8593;</button>' +
-    '<button class="mini" data-act="movedown" data-id="' + t.id + '"' + (i === state.techs.length - 1 ? " disabled" : "") + '>&#8595;</button>' +
-    '<button class="mini" data-act="toggle" data-id="' + t.id + '">' + (t.out ? "Mark in" : "Mark out") + '</button>' +
-    '<button class="danger" data-act="remove" data-id="' + t.id + '">Remove</button></div>'
-  ).join("");
-}
-
 async function poll() {
   if (!auth.pin) return;
   try {
     const res = await fetch(API, { cache: "no-store", headers: { "x-pin": auth.pin } });
     if (res.status === 401) { lockOut("Session ended — enter your PIN"); return; }
     const data = await res.json();
-    if (data.state) {
-      state = data.state;
-      render();
-    }
+    if (data.serverTime) clockOffset = Date.parse(data.serverTime) - Date.now();
+    if (data.state) { state = data.state; render(); }
     $("dot").className = "dot on";
     $("liveText").textContent = "Live · synced " + new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" });
   } catch (e) {
@@ -338,75 +418,100 @@ async function poll() {
 }
 
 async function act(action, payload) {
-  if (busy || !auth.role || auth.role === "view") return;
+  if (busy || !auth.role || auth.role === "view") return null;
   busy = true;
   render();
+  let data = null;
   try {
     const res = await fetch(API, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-pin": auth.pin },
-      body: JSON.stringify({ action, payload })
+      body: JSON.stringify({ action, payload: { line, ...(payload || {}) } })
     });
-    const data = await res.json();
-    if (res.status === 401) {
-      busy = false;
-      lockOut(data.error || "Session ended — enter your PIN");
-      return;
-    }
-    if (data.state) { state = data.state; }
+    data = await res.json();
+    if (res.status === 401) { busy = false; lockOut(data.error || "Session ended — enter your PIN"); return data; }
+    if (data.state) state = data.state;
     if (data.error) flash("err", data.error);
     else if (data.message) flash("ok", data.message);
   } catch (e) {
-    flash("err", "Connection failed — action may not have saved. Check the log.");
+    flash("err", "Connection failed — action may not have saved. Check the board.");
   }
   busy = false;
   render();
+  return data;
 }
 
+$("pinBtn").onclick = login;
+$("pinInput").addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
+$("lockBtn").onclick = () => lockOut("");
+
+document.querySelectorAll(".tab").forEach((btn) => {
+  btn.onclick = () => {
+    line = btn.dataset.line;
+    try { localStorage.setItem("dispatch-line", line); } catch (e) {}
+    render();
+  };
+});
+
 $("dispatchBtn").onclick = async () => {
-  await act("dispatch", { advisor: $("advisor").value, ro: $("roInput").value });
-  $("roInput").value = "";
+  const d = await act("dispatch", { advisor: $("advisor").value, ro: $("roInput").value });
+  if (d && !d.error) $("roInput").value = "";
 };
 $("skipBtn").onclick = () => act("skip");
 $("undoBtn").onclick = () => act("undo");
+
+$("shopList").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-complete]");
+  if (btn && !btn.disabled) act("complete", { entryId: btn.dataset.complete, advisor: $("advisor").value });
+});
+$("doneList").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-reopen]");
+  if (!btn) return;
+  const entry = state.log.find((x) => x.id === btn.dataset.reopen);
+  if (entry && confirm("Reopen " + entry.techName + (entry.ro ? " · RO " + entry.ro : "") + "? The timer resumes from the original drop-off time.")) {
+    act("reopen", { entryId: entry.id });
+  }
+});
+$("directBtns").addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-direct]");
+  if (!btn || btn.disabled) return;
+  const t = techsOf(line).find((x) => x.id === btn.dataset.direct);
+  if (t && confirm("Dispatch a waiter directly to " + t.name + "? They'll move to the back of the " + LINE_NAMES[line] + " rotation.")) {
+    const d = await act("dispatchTo", { id: t.id, advisor: $("advisor").value, ro: $("roInput").value });
+    if (d && !d.error) $("roInput").value = "";
+  }
+});
+
 $("addBtn").onclick = () => {
   const name = $("newTech").value;
   if (name.trim()) { act("addTech", { name }); $("newTech").value = ""; }
 };
 $("newTech").addEventListener("keydown", (e) => { if (e.key === "Enter") $("addBtn").click(); });
 $("clearLogBtn").onclick = () => {
-  if (confirm("Clear the entire dispatch log? Daily counts reset to zero.")) act("clearLog");
+  if (confirm("Clear " + LINE_NAMES[line] + " completed history? Daily counts reset. Vehicles still in the shop are kept.")) act("clearLog");
 };
 $("manageToggle").onclick = () => {
   const p = $("managePanel");
   p.classList.toggle("open");
   $("manageToggle").textContent = p.classList.contains("open") ? "Close manage" : "Manage techs";
 };
-$("directBtns").addEventListener("click", (e) => {
-  const btn = e.target.closest("button[data-direct]");
-  if (!btn || btn.disabled) return;
-  const t = state.techs.find(x => x.id === btn.dataset.direct);
-  if (t && confirm("Dispatch a waiter directly to " + t.name + "? They'll move to the back of the rotation.")) {
-    act("dispatchTo", { id: t.id, advisor: $("advisor").value, ro: $("roInput").value }).then(() => { $("roInput").value = ""; });
-  }
-});
-
 $("manageList").addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-act]");
   if (!btn || btn.disabled) return;
   const id = btn.dataset.id;
   const a = btn.dataset.act;
+  const t = techsOf(line).find((x) => x.id === id);
   if (a === "moveup") act("move", { id, dir: "up" });
   if (a === "movedown") act("move", { id, dir: "down" });
   if (a === "toggle") act("toggleOut", { id });
-  if (a === "remove") {
-    const t = state.techs.find(x => x.id === id);
-    if (confirm("Remove " + (t ? t.name : "this tech") + " from the board?")) act("removeTech", { id });
-  }
+  if (a === "switch") act("switchLine", { id });
+  if (a === "remove" && confirm("Remove " + (t ? t.name : "this tech") + " from " + LINE_NAMES[line] + "?")) act("removeTech", { id });
 });
 
+render();
 applyRole();
 setInterval(poll, 3000);
+setInterval(tick, 1000);
 </script>
 </body>
 </html>
