@@ -1,114 +1,171 @@
 import { getStore } from "@netlify/blobs";
 
 const KEY = "board-state";
-const emptyState = { techs: [], log: [], lastUpdate: null };
+const LINES = ["main", "express"];
+const LINE_NAMES = { main: "Main line", express: "Express" };
+const LOG_CAP = 500;
 
-async function loadState(store) {
-  const raw = await store.get(KEY);
-  if (!raw) return { ...emptyState };
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return { ...emptyState };
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const clean = (v, n) => (v || "").toString().trim().slice(0, n) || null;
+
+function blank() {
+  return { lines: { main: { techs: [] }, express: { techs: [] } }, log: [], lastUpdate: null };
+}
+
+// Upgrades the old single-rotation format; existing techs land on the main line,
+// and old log entries are marked untracked so they don't show up as vehicles still in shop.
+function migrate(raw) {
+  if (!raw || typeof raw !== "object") return blank();
+  let s = raw;
+  if (!s.lines) {
+    s = {
+      lines: { main: { techs: Array.isArray(raw.techs) ? raw.techs : [] }, express: { techs: [] } },
+      log: (Array.isArray(raw.log) ? raw.log : []).map((e) => ({
+        ...e,
+        line: "main",
+        untracked: true,
+        completedAt: e.completedAt || e.time,
+      })),
+      lastUpdate: raw.lastUpdate || null,
+    };
   }
+  for (const l of LINES) if (!s.lines[l] || !Array.isArray(s.lines[l].techs)) s.lines[l] = { techs: [] };
+  s.log = (Array.isArray(s.log) ? s.log : []).map((e, i) => (e.id ? e : { ...e, id: "old" + i + "-" + Date.parse(e.time) }));
+  return s;
+}
+
+function fmtDur(ms) {
+  const m = Math.max(0, Math.round(ms / 60000));
+  const h = Math.floor(m / 60);
+  return h ? `${h}h ${m % 60}m` : `${m}m`;
+}
+
+// Trims oldest completed history first; vehicles still in shop are never dropped.
+function capLog(log) {
+  if (log.length <= LOG_CAP) return log;
+  let excess = log.length - LOG_CAP;
+  return log.filter((e) => {
+    if (excess > 0 && e.completedAt) {
+      excess--;
+      return false;
+    }
+    return true;
+  });
 }
 
 function apply(state, action, payload = {}) {
-  const s = {
-    techs: [...state.techs.map((t) => ({ ...t }))],
-    log: [...state.log],
-    lastUpdate: state.lastUpdate,
+  const s = JSON.parse(JSON.stringify(state));
+  const line = LINES.includes(payload.line) ? payload.line : "main";
+  const L = s.lines[line];
+  const lname = LINE_NAMES[line];
+
+  const dispatchTech = (tech, extra) => {
+    const prevOrder = L.techs.map((t) => t.id);
+    L.techs = [...L.techs.filter((t) => t.id !== tech.id), tech];
+    const entry = {
+      id: newId(),
+      line,
+      techId: tech.id,
+      techName: tech.name,
+      time: new Date().toISOString(),
+      advisor: clean(payload.advisor, 20),
+      ro: clean(payload.ro, 12),
+      completedAt: null,
+      prevOrder,
+      ...extra,
+    };
+    s.log = capLog([...s.log, entry]);
+    return entry;
   };
 
   switch (action) {
     case "dispatch": {
-      const active = s.techs.filter((t) => !t.out);
-      if (active.length === 0) return { state: s, error: "No techs available" };
-      const tech = active[0];
-      const prevOrder = s.techs.map((t) => t.id);
-      s.techs = [...s.techs.filter((t) => t.id !== tech.id), tech];
-      s.log = [
-        ...s.log,
-        {
-          techId: tech.id,
-          techName: tech.name,
-          time: new Date().toISOString(),
-          advisor: (payload.advisor || "").trim().slice(0, 20) || null,
-          ro: (payload.ro || "").trim().slice(0, 12) || null,
-          prevOrder,
-        },
-      ].slice(-300);
-      return { state: s, message: `Waiter dispatched to ${tech.name}`, dispatched: tech.name };
+      const tech = L.techs.find((t) => !t.out);
+      if (!tech) return { state: s, error: `No ${lname} techs available` };
+      const e = dispatchTech(tech, {});
+      return { state: s, message: `${lname} waiter dispatched to ${tech.name}${e.ro ? ` · RO ${e.ro}` : ""}`, dispatched: tech.name };
     }
     case "dispatchTo": {
-      const tech = s.techs.find((t) => t.id === payload.id);
+      const tech = L.techs.find((t) => t.id === payload.id);
       if (!tech) return { state: s, error: "Tech not found" };
       if (tech.out) return { state: s, error: `${tech.name} is marked out — mark them in first` };
-      const prevOrder = s.techs.map((t) => t.id);
-      s.techs = [...s.techs.filter((t) => t.id !== tech.id), tech];
-      s.log = [
-        ...s.log,
-        {
-          techId: tech.id,
-          techName: tech.name,
-          time: new Date().toISOString(),
-          advisor: (payload.advisor || "").trim().slice(0, 20) || "Manager",
-          ro: (payload.ro || "").trim().slice(0, 12) || null,
-          direct: true,
-          prevOrder,
-        },
-      ].slice(-300);
-      return { state: s, message: `Waiter dispatched directly to ${tech.name} — moved to back of line`, dispatched: tech.name };
+      const e = dispatchTech(tech, { direct: true, advisor: clean(payload.advisor, 20) || "Manager" });
+      return { state: s, message: `Waiter dispatched directly to ${tech.name}${e.ro ? ` · RO ${e.ro}` : ""} — moved to back of line`, dispatched: tech.name };
     }
     case "skip": {
-      const active = s.techs.filter((t) => !t.out);
-      if (active.length === 0) return { state: s, error: "No techs available" };
-      const tech = active[0];
-      s.techs = [...s.techs.filter((t) => t.id !== tech.id), tech];
+      const tech = L.techs.find((t) => !t.out);
+      if (!tech) return { state: s, error: `No ${lname} techs available` };
+      L.techs = [...L.techs.filter((t) => t.id !== tech.id), tech];
       return { state: s, message: `${tech.name} moved to back — no waiter logged` };
     }
     case "undo": {
-      if (s.log.length === 0) return { state: s, error: "Nothing to undo" };
-      const last = s.log[s.log.length - 1];
-      if (last.prevOrder) {
-        const map = Object.fromEntries(s.techs.map((t) => [t.id, t]));
-        const restored = last.prevOrder.map((id) => map[id]).filter(Boolean);
-        s.techs.forEach((t) => {
-          if (!last.prevOrder.includes(t.id)) restored.push(t);
-        });
-        s.techs = restored;
+      let idx = -1;
+      for (let i = s.log.length - 1; i >= 0; i--) {
+        if (s.log[i].line === line && !s.log[i].untracked) { idx = i; break; }
       }
-      s.log = s.log.slice(0, -1);
-      return { state: s, message: `Undid dispatch to ${last.techName}` };
+      if (idx < 0) return { state: s, error: `Nothing to undo on ${lname}` };
+      const last = s.log[idx];
+      if (last.prevOrder) {
+        const map = Object.fromEntries(L.techs.map((t) => [t.id, t]));
+        const restored = last.prevOrder.map((id) => map[id]).filter(Boolean);
+        L.techs.forEach((t) => { if (!last.prevOrder.includes(t.id)) restored.push(t); });
+        L.techs = restored;
+      }
+      s.log.splice(idx, 1);
+      return { state: s, message: `Undid ${lname} dispatch to ${last.techName}${last.ro ? ` · RO ${last.ro}` : ""}` };
+    }
+    case "complete": {
+      const e = s.log.find((x) => x.id === payload.entryId);
+      if (!e) return { state: s, error: "Vehicle not found — it may have been undone" };
+      if (e.completedAt) return { state: s, error: `${e.techName}'s waiter is already completed` };
+      e.completedAt = new Date().toISOString();
+      e.completedBy = clean(payload.advisor, 20);
+      const dur = fmtDur(Date.parse(e.completedAt) - Date.parse(e.time));
+      return { state: s, message: `${e.techName}${e.ro ? ` · RO ${e.ro}` : ""} completed — ${dur} in shop` };
+    }
+    case "reopen": {
+      const e = s.log.find((x) => x.id === payload.entryId);
+      if (!e || !e.completedAt || e.untracked) return { state: s, error: "That vehicle can't be reopened" };
+      e.completedAt = null;
+      delete e.completedBy;
+      return { state: s, message: `${e.techName}${e.ro ? ` · RO ${e.ro}` : ""} reopened — timer resumed from original drop-off` };
     }
     case "addTech": {
-      const name = (payload.name || "").trim().slice(0, 30);
+      const name = clean(payload.name, 30);
       if (!name) return { state: s, error: "Enter a tech name" };
-      if (s.techs.some((t) => t.name.toLowerCase() === name.toLowerCase()))
-        return { state: s, error: `${name} is already on the board` };
-      s.techs = [...s.techs, { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, out: false }];
-      return { state: s, message: `${name} added` };
+      if (L.techs.some((t) => t.name.toLowerCase() === name.toLowerCase()))
+        return { state: s, error: `${name} is already on ${lname}` };
+      L.techs.push({ id: newId(), name, out: false });
+      return { state: s, message: `${name} added to ${lname}` };
     }
     case "removeTech": {
-      s.techs = s.techs.filter((t) => t.id !== payload.id);
+      L.techs = L.techs.filter((t) => t.id !== payload.id);
       return { state: s };
     }
     case "toggleOut": {
-      s.techs = s.techs.map((t) => (t.id === payload.id ? { ...t, out: !t.out } : t));
+      L.techs = L.techs.map((t) => (t.id === payload.id ? { ...t, out: !t.out } : t));
       return { state: s };
     }
     case "move": {
-      const i = s.techs.findIndex((t) => t.id === payload.id);
+      const i = L.techs.findIndex((t) => t.id === payload.id);
       const j = i + (payload.dir === "up" ? -1 : 1);
-      if (i < 0 || j < 0 || j >= s.techs.length) return { state: s };
-      const arr = [...s.techs];
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-      s.techs = arr;
+      if (i < 0 || j < 0 || j >= L.techs.length) return { state: s };
+      [L.techs[i], L.techs[j]] = [L.techs[j], L.techs[i]];
       return { state: s };
     }
+    case "switchLine": {
+      const other = line === "main" ? "express" : "main";
+      const tech = L.techs.find((t) => t.id === payload.id);
+      if (!tech) return { state: s, error: "Tech not found" };
+      if (s.lines[other].techs.some((t) => t.name.toLowerCase() === tech.name.toLowerCase()))
+        return { state: s, error: `${tech.name} is already on ${LINE_NAMES[other]}` };
+      L.techs = L.techs.filter((t) => t.id !== tech.id);
+      s.lines[other].techs.push(tech);
+      return { state: s, message: `${tech.name} moved to ${LINE_NAMES[other]} (bottom of rotation)` };
+    }
     case "clearLog": {
-      s.log = [];
-      return { state: s, message: "Dispatch log cleared" };
+      s.log = s.log.filter((e) => e.line !== line || !e.completedAt);
+      return { state: s, message: `${lname} completed history cleared — vehicles still in shop kept` };
     }
     default:
       return { state: s, error: "Unknown action" };
@@ -135,21 +192,30 @@ export default async (req) => {
     dispatch: ["advisor", "manager"],
     skip: ["advisor", "manager"],
     undo: ["advisor", "manager"],
+    complete: ["advisor", "manager"],
+    reopen: ["advisor", "manager"],
     dispatchTo: ["manager"],
     addTech: ["manager"],
     removeTech: ["manager"],
     toggleOut: ["manager"],
     move: ["manager"],
+    switchLine: ["manager"],
     clearLog: ["manager"],
+  };
+
+  const read = async () => {
+    const entry = await store.getWithMetadata(KEY);
+    if (!entry || !entry.data) return { state: blank(), etag: null };
+    let parsed = null;
+    try { parsed = JSON.parse(entry.data); } catch {}
+    return { state: migrate(parsed), etag: entry.etag || null };
   };
 
   if (req.method === "GET") {
     const role = roleFor(req.headers.get("x-pin"));
-    if (!role) {
-      return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers });
-    }
-    const state = await loadState(store);
-    return new Response(JSON.stringify({ state, role }), { headers });
+    if (!role) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers });
+    const { state } = await read();
+    return new Response(JSON.stringify({ state, role, serverTime: new Date().toISOString() }), { headers });
   }
 
   if (req.method === "POST") {
@@ -162,9 +228,7 @@ export default async (req) => {
 
     if (body.action === "login") {
       const role = roleFor((body.payload && body.payload.pin) || "");
-      if (!role) {
-        return new Response(JSON.stringify({ error: "Wrong PIN" }), { status: 401, headers });
-      }
+      if (!role) return new Response(JSON.stringify({ error: "Wrong PIN" }), { status: 401, headers });
       return new Response(JSON.stringify({ role }), { headers });
     }
 
@@ -179,16 +243,13 @@ export default async (req) => {
 
     let result = null;
     for (let attempt = 0; attempt < 4; attempt++) {
-      let current = { ...emptyState };
-      let etag = null;
+      let current, etag;
       try {
-        const entry = await store.getWithMetadata(KEY);
-        if (entry && entry.data) {
-          current = JSON.parse(entry.data);
-          etag = entry.etag || null;
-        }
-      } catch {}
-
+        ({ state: current, etag } = await read());
+      } catch {
+        current = blank();
+        etag = null;
+      }
       result = apply(current, body.action, body.payload);
       if (result.error) break;
 
@@ -204,7 +265,6 @@ export default async (req) => {
       }
       if (attempt === 3) result = { error: "Board is busy — try again" };
     }
-
     return new Response(JSON.stringify(result), { headers });
   }
 
