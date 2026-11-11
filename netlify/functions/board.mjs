@@ -211,7 +211,12 @@ export default async (req) => {
     return { state: migrate(parsed), etag: entry.etag || null };
   };
 
+  const STORE_NAME = (process.env.STORE_NAME || "Parkway Family Kia").slice(0, 60);
+
   if (req.method === "GET") {
+    if (new URL(req.url).searchParams.has("info")) {
+      return new Response(JSON.stringify({ storeName: STORE_NAME }), { headers });
+    }
     const role = roleFor(req.headers.get("x-pin"));
     if (!role) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers });
     const { state } = await read();

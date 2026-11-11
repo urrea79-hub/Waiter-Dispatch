@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Waiter Dispatch — Parkway Family Kia</title>
+<title>Waiter Dispatch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -125,7 +125,7 @@
 
 <div id="lockScreen">
   <div class="lockbox">
-    <div class="brand">Parkway Family Kia</div>
+    <div class="brand store-name"></div>
     <h2>Waiter dispatch</h2>
     <input type="password" id="pinInput" placeholder="PIN" inputmode="numeric" autocomplete="off">
     <button id="pinBtn">Unlock</button>
@@ -136,7 +136,7 @@
 
 <header>
   <div>
-    <div class="brand">Parkway Family Kia</div>
+    <div class="brand store-name"></div>
     <h1>Waiter dispatch</h1>
   </div>
   <div class="hright">
@@ -236,6 +236,15 @@ try {
 } catch (e) {}
 
 const $ = (id) => document.getElementById(id);
+
+function setStore(name) {
+  if (!name) return;
+  document.querySelectorAll(".store-name").forEach((el) => { el.textContent = name; });
+  document.title = "Waiter Dispatch — " + name;
+  try { localStorage.setItem("dispatch-store", name); } catch (e) {}
+}
+try { setStore(localStorage.getItem("dispatch-store")); } catch (e) {}
+fetch(API + "?info=1", { cache: "no-store" }).then((r) => r.json()).then((d) => setStore(d.storeName)).catch(() => {});
 const now = () => Date.now() + clockOffset;
 
 function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
